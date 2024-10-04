@@ -11,7 +11,8 @@ lmps(
   N,
   p_split = 0.5,
   cores = NULL,
-  direction = "backward"
+  direction = "backward",
+  forced_var = NULL
 )
 }
 \arguments{
@@ -21,16 +22,18 @@ lmps(
 
 \item{method}{Method for variable selection. Should be one of \code{"Lasso"} or \code{"BIC"}.}
 
-\item{N}{Number of splittings.}
+\item{N}{Number of splits.}
 
-\item{p_split}{Probabilities associated with the splittings.}
+\item{p_split}{Probabilities associated with the splits.}
 
 \item{cores}{Number of cores for parallel processing.}
 
-\item{direction}{It can take two values: \code{"backward"} and \code{"forward"} in the case of BIC, it specifies the direction in which the selection will be made.}
+\item{direction}{It can take two values: \code{"backward"} and \code{"forward"}. In the case of BIC, it specifies the direction in which the selection will be made.}
+
+\item{forced_var}{A character string specifying a predictor variable to be forced into selection. By default, it is NULL, allowing for no forced selection. If provided, this variable will be consistently selected during the N splits.}
 }
 \value{
-Un objet de classe lmps
+An object of class lmps
 }
 \description{
 Function that handles storing our estimation and variable selection matrices during the different splits.
@@ -45,14 +48,10 @@ data("BostonHousing")
 # lmps object
 model = lmps(medv ~ ., data = BostonHousing, method = "Lasso", N = 50)
 
-
 \donttest{
+# A parallelized example
 # lmps object
 model = lmps(medv ~ ., data = BostonHousing, method = "Lasso", N = 50, cores = 2)
-
-
-
 }
-
 
 }

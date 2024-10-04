@@ -27,6 +27,8 @@ Creates an object of class CIps based on the provided parameters.
 After obtaining the lmps object, which provides the selection matrices (models and coefficients),
 this function allows us to compute confidence intervals that are calculated empirically based on the chosen voting method and the desired level of certainty.
 The confidence intervals are obtained through empirical calculation on each vector of estimates for the corresponding coefficients.
+
+CIps also provides an intercept (test version) estimated as follows: in the case of a vote on models, it takes the average of the intercept vector for the rows where the most frequently selected model in the N splits is chosen. For the vote on coefficients, the idea is to select the coefficient that has been chosen the least number of times among those retained and then average the intercept only for the rows where this coefficient is selected.
 }
 \examples{
 library(mlbench)
