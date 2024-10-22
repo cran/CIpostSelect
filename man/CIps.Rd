@@ -4,7 +4,7 @@
 \alias{CIps}
 \title{Creates an object of class CIps based on the provided parameters.}
 \usage{
-CIps(x, vote, alpha, s.vote_coef = 0.5)
+CIps(x, vote, alpha = 0.05, s.vote_coef = 0.5)
 }
 \arguments{
 \item{x}{An object of class lmps, which contains the selection and coefficient estimation matrices.}
