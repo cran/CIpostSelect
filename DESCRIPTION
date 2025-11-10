@@ -1,7 +1,7 @@
 Package: CIpostSelect
 Type: Package
 Title: Confidence Interval Post-Selection of Variable
-Version: 0.2.1
+Version: 0.2.2
 Authors@R: person(given = "Boubacar",
                     family = "DIALLO",
                     role = c("aut", "cre"),
@@ -13,8 +13,10 @@ Imports: MASS, doParallel, foreach, ggplot2, glmnet, magrittr, mlbench,
         tictoc
 RoxygenNote: 7.3.2
 Encoding: UTF-8
+URL: https://github.com/Diallo0/CIpostSelect
+BugReports: https://github.com/Diallo0/CIpostSelect/issues
 NeedsCompilation: no
-Packaged: 2024-10-22 09:59:44 UTC; bouba
+Packaged: 2025-11-10 20:22:37 UTC; bouba
 Author: Boubacar DIALLO [aut, cre]
 Repository: CRAN
-Date/Publication: 2024-10-22 10:20:04 UTC
+Date/Publication: 2025-11-10 20:40:02 UTC

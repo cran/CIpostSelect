@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------------------------------------------------------
+
 split  = function(data, pi){
   data = data[sample(1:dim(data)[1], dim(data)[1]), ]
   index = (dim(data)[1]*pi)%>%as.integer()
@@ -7,7 +7,7 @@ split  = function(data, pi){
   return(list(train = data_train, test = data_test))
 }
 
-#--------------------------------------------------------------------------------------------------------------------
+
 
 Select_model_lasso = function(data_train){
 
@@ -27,23 +27,6 @@ Select_model_lasso = function(data_train){
   return(list(m = M_select, vect_coef = vect_coef))
 }
 
-# #Select_model_lasso_pred = function(data_train){
-#
-#   X = data_train[, -dim(data_train)[2]]
-#   y = data_train[, dim(data_train)[2]]
-#
-#   # Séléction des variables les plus importantes
-#   lambda = cv.glmnet(as.matrix(X), as.matrix(y), alpha = 1)$lambda.min
-#
-#   model = glmnet(X, y , alpha = 1, lambda = lambda)
-#
-#   vect_coef = as.matrix(coef(model)[-1]!= 0, nrow = 1)
-#
-#
-#   M_select = which(vect_coef!=0)
-#
-#   return(list(m = M_select, vect_coef = vect_coef))
-# }
 
 Select_model_aic = function(data_train, step){
 
@@ -90,53 +73,6 @@ Select_model_aic = function(data_train, step){
   return( list(m = which(vect_coef!=0), vect_coef = vect_coef))
 }
 
-# #Select_model_aic_pred = function(data_train, step){
-#
-#   if (step  == "backward"){
-#
-#     # Séléction des variables par AIC par backward elimination
-#
-#     X = data_train[, -dim(data_train)[2]]
-#     y = data_train[, dim(data_train)[2]]
-#     data_train = data.frame(x= X, y = y)
-#
-#     full_model = lm(y~., data = data_train)
-#     best_model = stepAIC(full_model, direction = "backward", k = 2) # k = log(n): = BIC
-#   }
-#
-#   else if (step == "forward"){
-#     # Séléction des variables par AIC par backward elimination
-#
-#     X = data_train[, -dim(data_train)[2]]
-#     y = data_train[, dim(data_train)[2]]
-#     data_train = data.frame(x = X, y = y)
-#
-#     full_model = lm(y~., data = data_train)
-#     init_model = lm(y~ 1, data = data_train)
-#     best_model = stepAIC(init_model, scope = formula(full_model),  direction = "forward", k = 2) # k = log(n): = BIC
-#   }
-#
-#   else{
-#     stop("Enter a valid direction")
-#   }
-#
-#   # modèle selectionné
-#   M_init = colnames(data_train[, -dim(data_train)[2]])
-#   M_aic  = names(summary(best_model)$coefficients[, "Estimate"])[-1]
-#
-#   #vect_coef = rep(0, length(M_init))
-#   #for (i in (1: length(M_init))){
-#   #  if (M_init[i]%in% M_aic){
-#   #    vect_coef[i] = 1
-#   #  }
-#   #}
-#   vect_coef = as.integer(M_init %in% M_aic)
-#
-#   return( list(m = which(vect_coef!=0), vect_coef = vect_coef))
-# }
-
-#-----------------------------------------------------------------------------------------------------------------------------------
-# forcer une variable
 
 matrices_MBV_lasso_parallel_forced = function (data, N, pi, numCores, indice){
 
@@ -209,77 +145,6 @@ matrices_MBV_lasso_parallel_forced = function (data, N, pi, numCores, indice){
 
   return(list(m_M = matrice_M_hat, m_beta = matriceBetaM_hat, vect_intercept = vect_intercept, var_names = colnames(data[, -dim(data)[2]]), time = time))
 }
-# #matrices_MBV_lasso_parallel_forced_pred = function (data, N, pi, numCores, indice){
-#
-#   # debuter l'enrigistrement
-#   tic.clearlog()
-#   tic()
-#
-#   p = dim(data)[2] - 1
-#
-#   #index de la variable forcer
-#
-#   # initialisation des différents matrices
-#   matrice_M_hat = matrix(0, ncol = p, nrow = N)
-#   matriceBetaM_hat = matrix(0, ncol = p, nrow = N)
-#   vect_intercept = rep(0, N)
-#   #matriceVarBetaM_hat = matrix(0, ncol = p, nrow = N)
-#
-#   # Mise en place de la parrallélisation
-#   cl = makePSOCKcluster(numCores)
-#   clusterExport(cl, varlist = c("pi", "p", "N", "indice",  "data", "split", "Select_model_lasso"), envir = environment())
-#   registerDoParallel(cl)
-#
-#   mat = foreach(1:N, .combine = rbind, .multicombine = TRUE, .packages = c("glmnet", "magrittr")) %dopar%{
-#
-#     s = split(data, pi)
-#     data_train = s$train
-#     data_test = s$test
-#
-#     # selection du model sur le train
-#     s = Select_model_lasso_pred(data_train)
-#     M_hat = s$m # les indexs du model selectionnés
-#
-#     # forcer la variable
-#     M_hat = c(indice, M_hat)
-#     M_hat = M_hat%>%unique()
-#
-#
-#     # data_select
-#     X = data_test[, M_hat]
-#     y = data_test[, dim(data_test)[2]]
-#
-#     # estimations des coéfficients
-#     model = lm(y~., data = data.frame(X, y))
-#
-#     vect_coef = s$vect_coef #stocke les coéfficients sélectionnés
-#     vect_coef[indice] = 1
-#     # récupère les estimations
-#     betaM_hat = model$coefficients[-1]
-#     intercept = model$coefficients[1]
-#     #VarBetaM_hat = unname(summary(model)$coefficients[, "Std. Error"][-1])^2
-#
-#
-#
-#     return(list(vect_coef = vect_coef, betaM_hat = betaM_hat, intercept = intercept, index = M_hat))
-#
-#   }
-#   stopCluster(cl)
-#
-#   for (i in 1:N){
-#     matrice_M_hat[i, ] = unlist(mat[i, "vect_coef"])
-#     matriceBetaM_hat[i, unlist(mat[i, "index"])] = unname((unlist(mat[i, "betaM_hat"])))
-#     #matriceVarBetaM_hat[i, unlist(mat[i, "index"])] = unname((unlist(mat[i, "VarBetaM_hat"])))
-#   }
-#   vect_intercept = unname(unlist(mat[, "intercept"]))
-#
-#   toc(log = TRUE, quiet = TRUE)
-#   logs = tic.log()
-#   time = as.numeric(gsub(" sec elapsed", "", logs[[1]]))
-#   tic.clearlog()
-#
-#   return(list(m_M = matrice_M_hat, m_beta = matriceBetaM_hat, vect_intercept = vect_intercept, var_names = colnames(data[, -dim(data)[2]]), time = time))
-# }
 
 
 matrices_MBV_aic_parallel_forced = function (data, N, pi,  numCores, indice, direction){
@@ -349,74 +214,6 @@ matrices_MBV_aic_parallel_forced = function (data, N, pi,  numCores, indice, dir
 
   return(list(m_M = matrice_M_hat, m_beta = matriceBetaM_hat, vect_intercept = vect_intercept, var_names = colnames(data[, -dim(data)[2]]), time = time))
 }
-# #matrices_MBV_aic_parallel_forced_pred = function (data, N, pi,  numCores, indice, direction){
-#
-#   # debuter l'enrigistrement
-#   tic.clearlog()
-#   tic()
-#
-#   p = dim(data)[2] - 1
-#
-#   # initialisation des différents matrices
-#   matrice_M_hat = matrix(0, ncol = p, nrow = N )
-#   matriceBetaM_hat = matrix(0, ncol = p, nrow = N)
-#   vect_intercept = rep(0, N)
-#
-#   #matriceVarBetaM_hat = matrix(0, ncol = p, nrow = N)
-#
-#   # Mise en place de la parrallélisation
-#   cl = makePSOCKcluster(numCores)
-#   clusterExport(cl, varlist = c("pi", "p", "N", "indice", "data", "split", "Select_model_aic"), envir = environment())
-#   registerDoParallel(cl)
-#
-#   mat = foreach(1:N, .combine = rbind, .multicombine = TRUE, .packages = c("MASS", "magrittr")) %dopar%{
-#
-#     s = split(data, pi)
-#     data_train = s$train
-#     data_test = s$test
-#
-#     # selection du model sur le train
-#     select = Select_model_aic_pred(data_train, step = direction)
-#     M_hat  = select$m
-#
-#     #forcer la variable
-#     M_hat = c(indice, M_hat)
-#     M_hat = M_hat%>%unique()
-#
-#     vect_coef = select$vect_coef
-#     vect_coef[indice] = 1
-#
-#     # data_select
-#     X = data_test[, M_hat]
-#     y = data_test[, dim(data_test)[2]]
-#
-#     # estimations des coéfficients
-#     model = lm(y~., data = data.frame(X, y))
-#     # récupère les estimations
-#     betaM_hat = unname(model$coefficients[-1])
-#     intercept = unname(model$coefficients[1])
-#     #VarBetaM_hat = unname(summary(model)$coefficients[, "Std. Error"][-1])^2
-#
-#     return(list(vect_coef = vect_coef, betaM_hat = betaM_hat, intercept = intercept, index = M_hat))
-#
-#   }
-#   stopCluster(cl)
-#
-#   for (i in 1:N){
-#     matrice_M_hat[i, ] = unlist(mat[i, "vect_coef"])
-#     matriceBetaM_hat[i, unlist(mat[i, "index"])] = unname((unlist(mat[i, "betaM_hat"])))
-#     #matriceVarBetaM_hat[i, unlist(mat[i, "index"])] = unname((unlist(mat[i, "VarBetaM_hat"])))
-#   }
-#   vect_intercept = unname(unlist(mat[, "intercept"]))
-#
-#   toc(log = TRUE, quiet = TRUE)
-#   logs = tic.log()
-#   time = as.numeric(gsub(" sec elapsed", "", logs[[1]]))
-#   tic.clearlog()
-#
-#   return(list(m_M = matrice_M_hat, m_beta = matriceBetaM_hat, vect_intercept = vect_intercept, var_names = colnames(data[, -dim(data)[2]]), time = time))
-# }
-
 
 
 matrices_MBV_lasso_parallel = function (data, N, pi, numCores){
@@ -485,74 +282,6 @@ matrices_MBV_lasso_parallel = function (data, N, pi, numCores){
 
   return(list(m_M = matrice_M_hat, m_beta = matriceBetaM_hat, vect_intercept = vect_intercept, var_names = colnames(data[, -dim(data)[2]]), time = time))
 }
-# #matrices_MBV_lasso_parallel_pred = function (data, N, pi, numCores){
-#
-#   # debuter l'enrigistrement
-#   tic.clearlog()
-#   tic()
-#
-#   p = dim(data)[2] - 1
-#
-#   #index de la variable forcer
-#
-#   # initialisation des différents matrices
-#   matrice_M_hat = matrix(0, ncol = p, nrow = N)
-#   matriceBetaM_hat = matrix(0, ncol = p, nrow = N)
-#   vect_intercept = rep(0, N)
-#   #matriceVarBetaM_hat = matrix(0, ncol = p, nrow = N)
-#
-#   # Mise en place de la parrallélisation
-#   cl = makePSOCKcluster(numCores)
-#   clusterExport(cl, varlist = c("pi", "p", "N", "data", "split", "Select_model_lasso"), envir = environment())
-#   registerDoParallel(cl)
-#
-#   mat = foreach(1:N, .combine = rbind, .multicombine = TRUE, .packages = c("glmnet", "magrittr")) %dopar%{
-#
-#     s = split(data, pi)
-#     data_train = s$train
-#     data_test = s$test
-#
-#     # selection du model sur le train
-#     s = Select_model_lasso_pred(data_train)
-#     M_hat = s$m # les indexs du model selectionnés
-#
-#
-#     # data_select
-#     X = data_test[, M_hat]
-#     y = data_test[, dim(data_test)[2]]
-#
-#     # estimations des coéfficients
-#     model = lm(y~., data = data.frame(X, y))
-#
-#     vect_coef = s$vect_coef #stocke les coéfficients sélectionnés
-#     # récupère les estimations
-#     betaM_hat = model$coefficients[-1]
-#     intercept = model$coefficients[1]
-#     #VarBetaM_hat = unname(summary(model)$coefficients[, "Std. Error"][-1])^2
-#
-#
-#
-#     return(list(vect_coef = vect_coef, betaM_hat = betaM_hat, intercept = intercept, index = M_hat))
-#
-#   }
-#   stopCluster(cl)
-#
-#   for (i in 1:N){
-#     matrice_M_hat[i, ] = unlist(mat[i, "vect_coef"])
-#     matriceBetaM_hat[i, unlist(mat[i, "index"])] = unname((unlist(mat[i, "betaM_hat"])))
-#     #matriceVarBetaM_hat[i, unlist(mat[i, "index"])] = unname((unlist(mat[i, "VarBetaM_hat"])))
-#   }
-#   vect_intercept = unname(unlist(mat[, "intercept"]))
-#
-#   toc(log = TRUE, quiet = TRUE)
-#   logs = tic.log()
-#   time = as.numeric(gsub(" sec elapsed", "", logs[[1]]))
-#   tic.clearlog()
-#
-#   return(list(m_M = matrice_M_hat, m_beta = matriceBetaM_hat, vect_intercept = vect_intercept, var_names = colnames(data[, -dim(data)[2]]), time = time))
-# }
-
-#-----------------------------------------------------------------------------------------
 
 matrices_MBV_aic_parallel = function (data, N, pi,  numCores, direction){
 
@@ -615,69 +344,6 @@ matrices_MBV_aic_parallel = function (data, N, pi,  numCores, direction){
 
   return(list(m_M = matrice_M_hat, m_beta = matriceBetaM_hat, vect_intercept = vect_intercept, var_names = colnames(data[, -dim(data)[2]]), time = time))
 }
-# #matrices_MBV_aic_parallel_pred = function (data, N, pi,  numCores, direction){
-#
-#   # debuter l'enrigistrement
-#   tic.clearlog()
-#   tic()
-#
-#   p = dim(data)[2] - 1
-#
-#   # initialisation des différents matrices
-#   matrice_M_hat = matrix(0, ncol = p, nrow = N )
-#   matriceBetaM_hat = matrix(0, ncol = p, nrow = N)
-#   vect_intercept = rep(0, N)
-#
-#   #matriceVarBetaM_hat = matrix(0, ncol = p, nrow = N)
-#
-#   # Mise en place de la parrallélisation
-#   cl = makePSOCKcluster(numCores)
-#   clusterExport(cl, varlist = c("pi", "p", "N", "data", "split", "Select_model_aic"), envir = environment())
-#   registerDoParallel(cl)
-#
-#   mat = foreach(1:N, .combine = rbind, .multicombine = TRUE, .packages = c("MASS", "magrittr")) %dopar%{
-#
-#     s = split(data, pi)
-#     data_train = s$train
-#     data_test = s$test
-#
-#     # selection du model sur le train
-#     select = Select_model_aic_pred(data_train, step = direction)
-#     M_hat  = select$m
-#     vect_coef = select$vect_coef
-#
-#     # data_select
-#     X = data_test[, M_hat]
-#     y = data_test[, dim(data_test)[2]]
-#
-#     # estimations des coéfficients
-#     model = lm(y~., data = data.frame(X, y))
-#     # récupère les estimations
-#     betaM_hat = unname(model$coefficients[-1])
-#     intercept = unname(model$coefficients[1])
-#     #VarBetaM_hat = unname(summary(model)$coefficients[, "Std. Error"][-1])^2
-#
-#     return(list(vect_coef = vect_coef, betaM_hat = betaM_hat, intercept = intercept, index = M_hat))
-#
-#   }
-#   stopCluster(cl)
-#
-#   for (i in 1:N){
-#     matrice_M_hat[i, ] = unlist(mat[i, "vect_coef"])
-#     matriceBetaM_hat[i, unlist(mat[i, "index"])] = unname((unlist(mat[i, "betaM_hat"])))
-#     #matriceVarBetaM_hat[i, unlist(mat[i, "index"])] = unname((unlist(mat[i, "VarBetaM_hat"])))
-#   }
-#   vect_intercept = unname(unlist(mat[, "intercept"]))
-#
-#   toc(log = TRUE, quiet = TRUE)
-#   logs = tic.log()
-#   time = as.numeric(gsub(" sec elapsed", "", logs[[1]]))
-#   tic.clearlog()
-#
-#   return(list(m_M = matrice_M_hat, m_beta = matriceBetaM_hat, vect_intercept = vect_intercept, var_names = colnames(data[, -dim(data)[2]]), time = time))
-# }
-
-#--------------------------------------------------------------------------------------------------------------------------------
 
 matrices_MBV_lasso = function(data , N, pi){
 
@@ -726,53 +392,6 @@ matrices_MBV_lasso = function(data , N, pi){
 
   return(list(m_M = matrice_M_hat, m_beta = matriceBetaM_hat, vect_intercept = vect_intercept, var_names = colnames(data[, -dim(data)[2]]), time = time))
 }
-# #matrices_MBV_lasso_pred = function(data , N, pi){
-#
-#   # debuter l'enrigistrement
-#   tic.clearlog()
-#   tic()
-#
-#   p = dim(data)[2] - 1
-#   # initialisation des différents matrices
-#   matrice_M_hat = matrix(0, ncol = p, nrow = N)
-#   matriceBetaM_hat = matrix(0, ncol = p, nrow = N)
-#   vect_intercept = rep(0, N)
-#   #matriceVarBetaM_hat = matrix(0, ncol = p, nrow = N)
-#
-#   for (i in 1:N){
-#     s = split(data, pi)
-#     data_train = s$train
-#     data_test = s$test
-#
-#     # selection du model sur le train
-#     s = Select_model_lasso_pred(data_train)
-#     M_hat = s$m
-#     matrice_M_hat[i, ] = s$vect_coef #stocke les coéfficients sélectionnés
-#
-#     # data_select
-#     X = data_test[, M_hat]
-#     y = data_test[, dim(data_test)[2]]
-#
-#     # estimations des coéfficients
-#     model = lm(y~., data = data.frame(X, y))
-#
-#     # récupère les estimations
-#     betaM_hat = model$coefficients[-1]
-#     vect_intercept[i] = model$coefficients[1]
-#     #VarBetaM_hat = unname(summary(model)$coefficients[, "Std. Error"][-1])
-#
-#     # stockage dans les matrices correspondantes
-#     matriceBetaM_hat[i, M_hat] = betaM_hat
-#     #matriceVarBetaM_hat[i, M_hat] = VarBetaM_hat
-#   }
-#
-#   toc(log = TRUE, quiet = TRUE)
-#   logs = tic.log()
-#   time = as.numeric(gsub(" sec elapsed", "", logs[[1]]))
-#   tic.clearlog()
-#
-#   return(list(m_M = matrice_M_hat, m_beta = matriceBetaM_hat, vect_intercept = vect_intercept, var_names = colnames(data[, -dim(data)[2]]), time = time))
-# }
 
 matrices_MBV_lasso_forced = function(data , N, pi, indice){
 
@@ -827,59 +446,6 @@ matrices_MBV_lasso_forced = function(data , N, pi, indice){
 
   return(list(m_M = matrice_M_hat, m_beta = matriceBetaM_hat, vect_intercept = vect_intercept, var_names = colnames(data[, -dim(data)[2]]), time = time))
 }
-# #matrices_MBV_lasso_forced_pred = function(data , N, pi, indice){
-#
-#   # debuter l'enrigistrement
-#   tic.clearlog()
-#   tic()
-#
-#   p = dim(data)[2] - 1
-#   # initialisation des différents matrices
-#   matrice_M_hat = matrix(0, ncol = p, nrow = N)
-#   matriceBetaM_hat = matrix(0, ncol = p, nrow = N)
-#   vect_intercept = rep(0, N)
-#   #matriceVarBetaM_hat = matrix(0, ncol = p, nrow = N)
-#
-#   for (i in 1:N){
-#     s = split(data, pi)
-#     data_train = s$train
-#     data_test = s$test
-#
-#     # selection du model sur le train
-#     s = Select_model_lasso_pred(data_train)
-#     M_hat = s$m
-#     M_hat = c(indice, M_hat)
-#     M_hat = M_hat%>%unique()
-#
-#     #s$vect_coef [M_hat] = 1
-#     vect_coef = s$vect_coef
-#     vect_coef[indice] = 1
-#     matrice_M_hat[i, ] = vect_coef #stocke les coéfficients sélectionnés
-#
-#     # data_select
-#     X = data_test[, M_hat]
-#     y = data_test[, dim(data_test)[2]]
-#
-#     # estimations des coéfficients
-#     model = lm(y~., data = data.frame(X, y))
-#
-#     # récupère les estimations
-#     betaM_hat = model$coefficients[-1]
-#     vect_intercept[i] = model$coefficients[1]
-#     #VarBetaM_hat = unname(summary(model)$coefficients[, "Std. Error"][-1])
-#
-#     # stockage dans les matrices correspondantes
-#     matriceBetaM_hat[i, M_hat] = betaM_hat
-#     #matriceVarBetaM_hat[i, M_hat] = VarBetaM_hat
-#   }
-#
-#   toc(log = TRUE, quiet = TRUE)
-#   logs = tic.log()
-#   time = as.numeric(gsub(" sec elapsed", "", logs[[1]]))
-#   tic.clearlog()
-#
-#   return(list(m_M = matrice_M_hat, m_beta = matriceBetaM_hat, vect_intercept = vect_intercept, var_names = colnames(data[, -dim(data)[2]]), time = time))
-# }
 
 matrices_MBV_aic = function(data , N, pi, direction){
 
@@ -928,53 +494,6 @@ matrices_MBV_aic = function(data , N, pi, direction){
 
   return(list(m_M = matrice_M_hat, m_beta = matriceBetaM_hat, vect_intercept = vect_intercept, var_names = colnames(data[, -dim(data)[2]]), time = time))
 }
-# matrices_MBV_aic_pred = function(data , N, pi, direction){
-#
-#   # debuter l'enrigistrement
-#   tic.clearlog()
-#   tic()
-#
-#   p = dim(data)[2] - 1
-#   # initialisation des différents matrices
-#   matrice_M_hat = matrix(0, ncol = p, nrow = N)
-#   matriceBetaM_hat = matrix(0, ncol = p, nrow = N)
-#   vect_intercept = rep(0, N)
-#   #matriceVarBetaM_hat = matrix(0, ncol = p, nrow = N)
-#
-#   for (i in 1:N){
-#     s = split(data, pi)
-#     data_train = s$train
-#     data_test = s$test
-#
-#     # selection du model sur le train
-#     s = Select_model_aic_pred(data_train, step = direction)
-#     M_hat = s$m
-#     matrice_M_hat[i, ] = s$vect_coef #stocke les coéfficients sélectionnés
-#
-#     # data_select
-#     X = data_test[, M_hat]
-#     y = data_test[, dim(data_test)[2]]
-#
-#     # estimations des coéfficients
-#     model = lm(y~., data = data.frame(X, y))
-#
-#     # récupère les estimations
-#     betaM_hat = model$coefficients[-1]
-#     vect_intercept[i] = model$coefficients[1]
-#     #VarBetaM_hat = unname(summary(model)$coefficients[, "Std. Error"][-1])
-#
-#     # stockage dans les matrices correspondantes
-#     matriceBetaM_hat[i, M_hat] = betaM_hat
-#     #matriceVarBetaM_hat[i, M_hat] = VarBetaM_hat
-#   }
-#
-#   toc(log = TRUE, quiet = TRUE)
-#   logs = tic.log()
-#   time = as.numeric(gsub(" sec elapsed", "", logs[[1]]))
-#   tic.clearlog()
-#
-#   return(list(m_M = matrice_M_hat, m_beta = matriceBetaM_hat, vect_intercept = vect_intercept, var_names = colnames(data[, -dim(data)[2]]), time = time))
-# }
 
 matrices_MBV_aic_forced = function(data , N, pi, indice, direction){
 
@@ -1028,59 +547,7 @@ matrices_MBV_aic_forced = function(data , N, pi, indice, direction){
 
   return(list(m_M = matrice_M_hat, m_beta = matriceBetaM_hat, vect_intercept = vect_intercept, var_names = colnames(data[, -dim(data)[2]]), time = time))
 }
-# #matrices_MBV_aic_forced_pred = function(data , N, pi, indice, direction){
-#
-#   # debuter l'enrigistrement
-#   tic.clearlog()
-#   tic()
-#
-#   p = dim(data)[2] - 1
-#   # initialisation des différents matrices
-#   matrice_M_hat = matrix(0, ncol = p, nrow = N)
-#   matriceBetaM_hat = matrix(0, ncol = p, nrow = N)
-#   vect_intercept = rep(0, N)
-#   #matriceVarBetaM_hat = matrix(0, ncol = p, nrow = N)
-#
-#   for (i in 1:N){
-#     s = split(data, pi)
-#     data_train = s$train
-#     data_test = s$test
-#
-#     # selection du model sur le train
-#     s = Select_model_aic_pred(data_train, step = direction)
-#     M_hat = s$m
-#     M_hat = c(indice, M_hat)
-#     M_hat = M_hat%>%unique()
-#
-#     vect_coef = s$vect_coef
-#     vect_coef[indice] = 1
-#     matrice_M_hat[i, ] = vect_coef #stocke les coéfficients sélectionnés
-#
-#     # data_select
-#     X = data_test[, M_hat]
-#     y = data_test[, dim(data_test)[2]]
-#
-#     # estimations des coéfficients
-#     model = lm(y~., data = data.frame(X, y))
-#
-#     # récupère les estimations
-#     betaM_hat = model$coefficients[-1]
-#     vect_intercept[i] = model$coefficients[1]
-#     #VarBetaM_hat = unname(summary(model)$coefficients[, "Std. Error"][-1])
-#
-#     # stockage dans les matrices correspondantes
-#     matriceBetaM_hat[i, M_hat] = betaM_hat
-#     #matriceVarBetaM_hat[i, M_hat] = VarBetaM_hat
-#   }
-#
-#   toc(log = TRUE, quiet = TRUE)
-#   logs = tic.log()
-#   time = as.numeric(gsub(" sec elapsed", "", logs[[1]]))
-#   tic.clearlog()
-#
-#   return(list(m_M = matrice_M_hat, m_beta = matriceBetaM_hat, vect_intercept = vect_intercept, var_names = colnames(data[, -dim(data)[2]]), time = time))
-# }
-#-----------------------------------------------------------------------------------------------------------------
+
 
 vote2 = function(matrices, N, emp_alpha){
 
@@ -1279,12 +746,11 @@ lmps = function(formula, data, method, N, p_split = 0.5, cores = NULL, direction
 
 
 
-  # Vérification de la méthode
   if (!method %in% c("Lasso", "BIC")) {
     stop("Error on method argument, check ??lmps")
   }
 
-  ##################  Regler la formule ##################################
+  ###################### formule ##################################
   variables = all.vars(formula)
   target = variables[1]
 
@@ -1296,7 +762,7 @@ lmps = function(formula, data, method, N, p_split = 0.5, cores = NULL, direction
 
   data = data[, c(predictors, target), drop = FALSE]  # Assurez-vous que data reste un data.frame
 
-  ######### Regler le problème forced_var ################
+  #########  forced_var ################
   if (!is.null(forced_var)) {
     if (!forced_var %in% predictors) {
       stop("Error: Enter a valid variable name for forced_var")
@@ -1335,162 +801,14 @@ lmps = function(formula, data, method, N, p_split = 0.5, cores = NULL, direction
     }
   }
 
-  # else{
-  #   ################# Regler la parallélisation ###################
-  #   if (is.null(cores)) {
-  #     if (method == "BIC") {
-  #       matrices = if (is.null(forced_var)) {
-  #         matrices_MBV_aic_pred(data, N, pi = p_split, direction = direction)
-  #       } else {
-  #         matrices_MBV_aic_forced_pred(data, N, pi = p_split, indice = indice, direction = direction)
-  #       }
-  #     } else {
-  #       matrices = if (is.null(forced_var)) {
-  #         matrices_MBV_lasso_pred(data, N, pi = p_split)
-  #       } else {
-  #         matrices_MBV_lasso_forced_pred(data, N, pi = p_split, indice = indice)
-  #       }
-  #     }
-  #   } else {
-  #     if (method == "BIC") {
-  #       matrices = if (is.null(forced_var)) {
-  #         matrices_MBV_aic_parallel_pred(data, N, pi = p_split, numCores = cores, direction = direction)
-  #       } else {
-  #         matrices_MBV_aic_parallel_forced_pred(data, N, pi = p_split, numCores = cores, indice = indice, direction = direction)
-  #       }
-  #     } else {
-  #       matrices = if (is.null(forced_var)) {
-  #         matrices_MBV_lasso_parallel_pred(data, N, pi = p_split, numCores = cores)
-  #       } else {
-  #         matrices_MBV_lasso_parallel_forced_pred(data, N, pi = p_split, indice = indice, numCores = cores)
-  #       }
-  #     }
-  #   }
-  #
-  # }
 
 
-  # Créer la liste de résultats
   lmps = list(nb_splittings = N, matrix = matrices)
   class(lmps) = "lmps"
 
   return(invisible(lmps))
 }
 
-
-# lmps = function(formula, data, method , N, p_split = 0.5, cores = NULL, direction = "backward", forced_var = NULL){
-#   # method = c("Lasso", "BIC")
-#   # vote = c("model", "coef")
-#   # numCores : = nombre de coeurs pour la parallélisation
-#   # s.vect_coef := si jamais on utilise vote sur les coefficients, la proba de selection d'une variable
-#   # data := data set
-#   # formula : = model de regression
-#   # N := nombres de splittages
-#   # p_split := probabiltés de splittages
-#
-#   #### pour la méthode
-#
-#
-#
-#
-#   if (method%in%c("Lasso", "BIC")==FALSE){
-#     stop("Error on method argument, check ??lmps")
-#   }
-#
-#
-#
-#   ##################  Regler la formule ##################################
-#   variables = all.vars(formula)
-#
-#   target = variables[1]
-#
-#   if ("." %in% all.names(formula)) {
-#     predictors = setdiff(names(data), target)
-#   } else {
-#
-#     predictors = variables[-1]
-#   }
-#
-#   data = data[, c(predictors, target)]
-#
-#   ######### Regler le problème forced_var
-#
-#   if(is.null(forced_var)){
-#
-#     ################# Regler la parrallélisation ###################
-#     if(is.null(cores)){
-#
-#       # post_selection
-#       if (method == "BIC"){
-#         matrices = matrices_MBV_aic(data, N, pi = p_split, direction = direction)
-#       }
-#       else{
-#         matrices = matrices_MBV_lasso(data, N, pi = p_split)
-#       }
-#
-#     }
-#
-#     else{
-#       # post_selection
-#       if (method == "BIC"){
-#         matrices = matrices_MBV_aic_parallel(data, N, pi = p_split, numCores = cores, direction = direction)
-#       }
-#       else{
-#         matrices = matrices_MBV_lasso_parallel(data, N, pi = p_split, numCores = cores)
-#       }
-#
-#
-#     }
-#
-#   }
-#
-#   else{
-#
-#     if(forced_var %in% predictors){
-#       indice = which(predictors == forced_var)
-#
-#       ################# Regler la parrallélisation ###################
-#       if(is.null(cores)){
-#
-#         # post_selection
-#         if (method == "BIC"){
-#           matrices = matrices_MBV_aic_forced(data, N, pi = p_split, indice = indice, direction = direction)
-#         }
-#         else{
-#           matrices = matrices_MBV_lasso_forced(data, N, pi = p_split, indice = indice)
-#         }
-#
-#       }
-#
-#       else{
-#         # post_selection
-#         if (method == "BIC"){
-#           matrices = matrices_MBV_aic_parallel_forced(data, N, pi = p_split, numCores = cores, indice = indice, direction = direction)
-#         }
-#         else{
-#           matrices = matrices_MBV_lasso_parallel_forced(data, N, pi = p_split, indice = indice, numCores = cores)
-#         }
-#
-#       }
-#
-#
-#
-#     }
-#
-#     else{
-#       stop("Error: Entrer un nom de variable à forced valide")
-#     }
-#
-#   }
-#
-#
-#
-#   lmps =  list(nb_splittings = N, matrix = matrices)
-#   class(lmps) = "lmps"
-#
-#
-#   return(invisible(lmps))
-# }
 
 
 
@@ -1575,7 +893,7 @@ summary.lmps = function(object, ...){
 }
 
 
-#-------------------------------------------------------------------------------
+
 
 #' Creates an object of class CIps based on the provided parameters.
 #'
@@ -1727,73 +1045,6 @@ plot.CIps = function(x, ...){
 }
 
 
-
-
-################# A travailller ########################################
-
-#' A predict function for cips
-#'
-#' This function generates predictions based on a cips object.
-#'
-#' @param object An object of class 'cips'.
-#' @param newdata A dataframe containing new data to make predictions.
-#' @param X Explanatory variables, default is NULL.
-#' @param y Target corresponding to the explanatory variables, default is NULL.
-#' @param type_vote prend comme valeur "model" or "coef"
-#' @param ... Additional arguments for future use.
-#'
-#' @details When type_vote is "model", the intercept is estimated as the average of the rows where the most frequent model was selected during the N splits.
-#' However, when type_vote is "coef", it becomes difficult to estimate the intercept because the coefficients are selected individually and not uniformly.
-#' The only possible approach in this case is a hybrid one: first, select the model using our methodology, and then perform a regression on the selected subset of variables.
-#' This allows us to obtain coefficient estimates, including the intercept, as long as X and y are not null.
-#' In summary, this hybrid approach mainly uses our method for variable selection.
-#' @return A numeric vector of predicted values.
-# predict.CIps = function(object, newdata, type_vote = "model", X = NULL, y = NULL,  ...){
-#
-#
-#   if(dim(newdata)[2]!= length(object$names_vars)){
-#     stop("Error: different variable numbers")
-#   }
-#
-#   # réarranger le data test comme names_vars
-#   X_test = newdata[, object$names_vars]
-#   X_test = X_test%>%as.matrix(ncol = length(object$numvars))%>%apply(MARGIN = 2, FUN = as.numeric)
-#
-#   if(type_vote == "model"){
-#
-#     pred = X_test%>%as.matrix()%*% as.matrix(object$beta) + object$b0
-#   }
-#
-#   else if (type_vote == "coef"){
-#
-#     if(is.null(X) | is.null(y)){
-#       stop("X and y cannot be NULL! See how the hybrid approach works")
-#     }
-#
-#     else{
-#
-#       dim = dim(X)[2] # enrigistrer la dimension
-#       X = X[, object$names_vars] # réordonner au cas où
-#       vars_select = object$m%>%as.integer()
-#       X = X[, which(vars_select!=0)]
-#       data = data.frame(X = X, y = y)
-#       colnames(data) = c(paste0("x_", (1:dim(X)[2])), "y")
-#       model = lm(y~., data = data)
-#       b0 = model$coefficients[1]
-#       beta = rep(0, dim)
-#       beta [which(vars_select!=0)] = model$coefficients[-1]
-#
-#       pred = X_test%>%as.matrix()%*%as.matrix(beta) + b0
-#
-#       return (pred)
-#     }
-#
-#
-#   }
-#   else{
-#     stop("Enter the correct type of vote")
-#   }
-# }
 
 
 
